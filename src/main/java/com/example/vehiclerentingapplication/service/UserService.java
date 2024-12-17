@@ -1,22 +1,67 @@
 package com.example.vehiclerentingapplication.service;
 
+import java.util.Optional;
+
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+ import com.example.vehiclerentingapplication.entity.Image;
 import com.example.vehiclerentingapplication.entity.User;
+import com.example.vehiclerentingapplication.enums.UserRole;
+import com.example.vehiclerentingapplication.exceptions.UserNotFoundByIdException;
+import com.example.vehiclerentingapplication.mapper.UserMapper;
 import com.example.vehiclerentingapplication.repository.UserRepository;
+import com.example.vehiclerentingapplication.requestedto.UserRequest;
+import com.example.vehiclerentingapplication.respondedto.UserResponse;
 
 @Service
 public class UserService {
-	
+
 	private final UserRepository userRepository;
-	
-	public UserService(UserRepository userRepository) {
-		super();
-		this.userRepository=userRepository;
-	}
-	
-	public User register(User user) {
-		return userRepository.save(user);
+	private final UserMapper userMapper;
+	private final PasswordEncoder passwordEncoder;
+
+	public UserService(UserRepository userRepository, UserMapper userMapper, PasswordEncoder passwordEncoder) {
+		this.userRepository = userRepository;
+		this.userMapper = userMapper;
+		this.passwordEncoder = passwordEncoder;
 	}
 
+	public UserResponse register(UserRequest userRequest, UserRole role) {
+		User user = userMapper.mapToUser(userRequest, new User());
+		user.setPassword(passwordEncoder.encode(user.getPassword()));
+		user.setRole(role);
+		user = userRepository.save(user);
+		return userMapper.mapToUserResponse(user);
+
+	}
+
+	public UserResponse getUserById(int userId) {
+		User user = userRepository.findById(userId)
+				.orElseThrow(() -> new UserNotFoundByIdException("User not found by given id"));
+		user.setPassword(passwordEncoder.encode(user.getPassword()));
+		UserResponse response = userMapper.mapToUserResponse(user);
+		this.setProfilePictureURL(response, user.getImage());
+		return response;
+	}
+
+	private void setProfilePictureURL(UserResponse userResponse, Image profilePicture) {
+		if (profilePicture != null) {
+			userResponse.setProfilePictureLink("/find-image-by-id?imageId=" + profilePicture.getImageId());
+		}
+	}
+
+	public UserResponse updateUser(UserRequest userRequest, int userId) {
+		Optional<User> optional = userRepository.findById(userId);
+		if (optional.isPresent()) {
+			User exUser = optional.get();
+			User updatedUser = userMapper.mapToUser(userRequest, exUser);
+			User savedUser = userRepository.save(updatedUser);
+			UserResponse response = userMapper.mapToUserResponse(savedUser);
+			this.setProfilePictureURL(response, exUser.getImage());
+			return response;
+		} else {
+			throw new UserNotFoundByIdException("User  not found by given id");
+		}
+	}
 }
