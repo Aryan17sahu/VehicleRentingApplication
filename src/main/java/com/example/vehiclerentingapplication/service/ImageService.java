@@ -13,38 +13,38 @@ import com.example.vehiclerentingapplication.exceptions.ImageNotFoundByIdExcepti
 import com.example.vehiclerentingapplication.exceptions.UserNotFoundByIdException;
 import com.example.vehiclerentingapplication.repository.ImageRepository;
 import com.example.vehiclerentingapplication.repository.UserRepository;
-
- 
+import com.example.vehiclerentingapplication.security.AuthUtil;
 
 @Service
 public class ImageService {
-	
 
 	private final UserRepository userRepository;
 	private final ImageRepository imageRepository;
-	
-	public ImageService(UserRepository userRepository, ImageRepository imageRepository) {
+	private final AuthUtil authUtil;
+
+	public ImageService(UserRepository userRepository, ImageRepository imageRepository, AuthUtil authUtil) {
+		super();
 		this.userRepository = userRepository;
 		this.imageRepository = imageRepository;
+		this.authUtil = authUtil;
 	}
 
-	public void addUserProfilePicture(int userId, MultipartFile file) {
-		Optional<User> optional = userRepository.findById(userId);
-		if (optional.isPresent()) {
-			User user = optional.get();
-			
-			if (user.getImage()!=null) {
-				Image image = user.getImage();
-				this.uploadProfilePhoto(file, user);
-				imageRepository.delete(image);
-			}
-			
+	public void addUserProfilePicture(MultipartFile file) {
+//		Optional<User> optional = userRepository.findById());
+//		if (optional.isPresent()) {
+//			User user = optional.get();
+//			
+		User user = authUtil.getCurrentUser();
+		if (user.getImage() != null) {
+			Image image = user.getImage();
 			this.uploadProfilePhoto(file, user);
-		} else {
-			throw new UserNotFoundByIdException("User Not Found By Given Id");
+			imageRepository.delete(image);
 		}
+
+		this.uploadProfilePhoto(file, user);
 	}
 	
+
 	public void uploadProfilePhoto(MultipartFile file, User user) {
 		Image image = imageRepository.save(this.getImage(file));
 		user.setImage(image);
@@ -64,12 +64,12 @@ public class ImageService {
 	}
 
 	public Image findImageById(int imageId) {
-	
+
 		Optional<Image> optional = imageRepository.findById(imageId);
 		if (optional.isPresent()) {
-		 return optional.get();
+			return optional.get();
 		} else {
-	     throw new ImageNotFoundByIdException("Image Not Found By Id");
+			throw new ImageNotFoundByIdException("Image Not Found By Id");
 		}
 
 	}

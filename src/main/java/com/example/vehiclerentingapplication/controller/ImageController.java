@@ -26,8 +26,8 @@ public class ImageController {
 
 	@PostMapping("/add-user-profile-picture")
 	public ResponseEntity<SimpleResponseStructure> addUserProfilePicture
-	(@RequestParam("userId") int userId, @RequestParam("file") MultipartFile file ){
-		imageService.addUserProfilePicture(userId, file);
+	( @RequestParam("file") MultipartFile file ){
+		imageService.addUserProfilePicture( file);
 		return ResponseEntity.status(HttpStatus.CREATED)
 				.body(SimpleResponseStructure.create(HttpStatus.CREATED.value(),"User-Profile-Updated"));
 	}

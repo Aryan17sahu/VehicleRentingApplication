@@ -13,6 +13,9 @@ import com.example.vehiclerentingapplication.mapper.UserMapper;
 import com.example.vehiclerentingapplication.repository.UserRepository;
 import com.example.vehiclerentingapplication.requestedto.UserRequest;
 import com.example.vehiclerentingapplication.respondedto.UserResponse;
+import com.example.vehiclerentingapplication.security.AuthUtil;
+
+import jakarta.security.auth.message.config.AuthConfig;
 
 @Service
 public class UserService {
@@ -20,11 +23,16 @@ public class UserService {
 	private final UserRepository userRepository;
 	private final UserMapper userMapper;
 	private final PasswordEncoder passwordEncoder;
+	private final AuthUtil authUtil;
 
-	public UserService(UserRepository userRepository, UserMapper userMapper, PasswordEncoder passwordEncoder) {
+	 
+	public UserService(UserRepository userRepository, UserMapper userMapper, PasswordEncoder passwordEncoder,
+			AuthUtil authUtil) {
+		super();
 		this.userRepository = userRepository;
 		this.userMapper = userMapper;
 		this.passwordEncoder = passwordEncoder;
+		this.authUtil =  authUtil;
 	}
 
 	public UserResponse register(UserRequest userRequest, UserRole role) {
@@ -36,9 +44,10 @@ public class UserService {
 
 	}
 
-	public UserResponse getUserById(int userId) {
-		User user = userRepository.findById(userId)
-				.orElseThrow(() -> new UserNotFoundByIdException("User not found by given id"));
+	public UserResponse getUserById() {
+//		User user = userRepository.findById(userId)
+//				.orElseThrow(() -> new UserNotFoundByIdException("User not found by given id"));
+		User user = authUtil.getCurrentUser();
 		user.setPassword(passwordEncoder.encode(user.getPassword()));
 		UserResponse response = userMapper.mapToUserResponse(user);
 		this.setProfilePictureURL(response, user.getImage());
@@ -51,17 +60,18 @@ public class UserService {
 		}
 	}
 
-	public UserResponse updateUser(UserRequest userRequest, int userId) {
-		Optional<User> optional = userRepository.findById(userId);
-		if (optional.isPresent()) {
-			User exUser = optional.get();
-			User updatedUser = userMapper.mapToUser(userRequest, exUser);
+	public UserResponse updateUser(UserRequest userRequest) {
+//		Optional<User> optional = userRepository.findById(userId);
+//		if (optional.isPresent()) {
+//			User exUser = optional.get();
+			User user = authUtil.getCurrentUser();
+			User updatedUser = userMapper.mapToUser(userRequest, user);
 			User savedUser = userRepository.save(updatedUser);
 			UserResponse response = userMapper.mapToUserResponse(savedUser);
-			this.setProfilePictureURL(response, exUser.getImage());
+			this.setProfilePictureURL(response, user.getImage());
 			return response;
-		} else {
-			throw new UserNotFoundByIdException("User  not found by given id");
-		}
+//		} else {
+//			throw new UserNotFoundByIdException("User  not found by given id");
+//		}
 	}
 }

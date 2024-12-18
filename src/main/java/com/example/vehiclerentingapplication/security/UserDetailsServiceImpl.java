@@ -1,4 +1,4 @@
-package com.example.vehiclerentingapplication.controller.security;
+package com.example.vehiclerentingapplication.security;
 
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
